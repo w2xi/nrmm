@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "bin": {
-    "nrs": "bin/index.js"
+    "nrs": "src/index.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -16,7 +16,11 @@
     "cac": "^6.7.14",
     "chalk": "^4.1.2",
     "execa": "^8.0.1",
-    "ping": "^0.4.4",
+    "node-http-ping": "^0.3.1",
     "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0",
+    "prettier": "3.2.5"
   }
 }
