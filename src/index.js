@@ -1,7 +1,10 @@
 const { exec, execSync } = require('child_process')
 const prompts = require('prompts')
+const inquirer = require('inquirer');
 const cac = require('cac')
 const chalk = require('chalk')
+const fs = require('fs')
+const path = require('path')
 const pkg = require('../package.json')
 const registries = require('../registries.json')
 const ping = require('node-http-ping')
@@ -11,7 +14,7 @@ const {
 } = require('./utils')
 
 // built-in origin
-const whitelist = ['npm', 'yarn', 'tencent', 'cnpm', 'taobao', 'npmMirror']
+const whiteList = ['npm', 'yarn', 'tencent', 'cnpm', 'taobao', 'npmMirror']
 
 const cli = cac()
 
@@ -51,12 +54,11 @@ cli
         console.log(chalk.red('registry mirror origin not found'))
       }
     } else {
-      prompts({
-        type: 'select',
+      inquirer.prompt({
+        type: 'list',
         name: 'value',
         message: 'Select a mirror origin',
-        initial: 0,
-        choices: Object.keys(registries).map(key => ({ title: key, value: key }))
+        choices: Object.keys(registries)
       }).then(res => {
         setMirrorOrigin(registries[res.value].registry)
       })
@@ -84,16 +86,98 @@ cli.command('ping [origin]', 'ping mirror origin to test...').action((origin) =>
       console.log(chalk.red('ping origin not found'))
     }
   } else {
-    prompts({
-      type: 'select',
+    inquirer.prompt({
+      type: 'list',
       name: 'value',
-      message: 'select a mirror origin',
-      choices: Object.keys(registries).map(key => ({ title: key, value: key }))
+      message: 'Select a mirror origin',
+      choices: Object.keys(registries)
     }).then(res => {
       const pingOrigin = registries[res.value].ping
       startPing(pingOrigin)
     })
   }
+})
+
+cli.command('add', 'add mirror origin').action(() => {
+  inquirer.prompt([
+    {
+      type: 'input',
+      name: 'name',
+      message: 'Please input registry name:',
+      validate(name) {
+        if (registries[name]) {
+          return 'registry name already exists'
+        }
+        if (!name.trim()) {
+          return 'registry name cannot be empty'
+        }
+        return true
+      },
+    },
+    {
+      type: 'input',
+      name: 'url',
+      message: 'Please input registry url:',
+      validate(url) {
+        if (!url.trim()) {
+          return 'registry url cannot be empty'
+        }
+        if (!url.startsWith('http')) {
+          return 'registry url must be a valid url'
+        }
+        return true
+      }
+    }
+  ]).then(res => {
+    let { name, url } = res
+    url = url.trim()
+
+    registries[name] = {
+      home: url,
+      registry: url,
+      ping: url,
+    }
+    // save new mirror info into registries.json
+    try {
+      fs.writeFileSync(path.join(__dirname, '../registries.json'), JSON.stringify(registries, null, 2))
+      console.log(chalk.blue('add mirror origin successfully'))
+    } catch (err) {
+      console.log(chalk.red(err))
+    }
+  })
+})
+
+cli.command('del', 'delete a custom origin').action(() => {
+  const keys = Object.keys(registries)
+  if (keys.length === whiteList.length) {
+    return console.log(chalk.red('current has no custom origin to be deleted'))
+  }
+  const delOrigins = keys.filter(key => !whiteList.includes(key))
+  inquirer.prompt({
+    type: 'list',
+    name: 'name',
+    message: 'Please select the origin to be deleted:',
+    choices: delOrigins,
+  }).then(async res=> {
+    const name = res.name.trim()
+    const currentOrigin = await getCurrentMirrorOrigin()
+    const selectedOrigin = registries[name].registry
+    if (currentOrigin === selectedOrigin) {
+      console.log(chalk.red('current origin is using, should not be deleted'))
+    } else {
+      delete registries[name]
+      try {
+        fs.writeFileSync(path.join(__dirname, '../registries.json'), JSON.stringify(registries, null, 2)) 
+        console.log(chalk.blue('delete mirror origin successfully'))
+      } catch (err) {
+        console.log(chalk.red(err))
+      }
+    }
+  })
+})
+
+cli.command('rename', 'rename a custom origin').action(() => {
+  // ...
 })
 
 cli.help()
