@@ -17,6 +17,8 @@ const whiteList = ['npm', 'yarn', 'tencent', 'cnpm', 'taobao', 'npmMirror']
 
 const cli = cac()
 
+cli.version(pkg.version)
+
 cli
   .command('ls [list]', 'list registry mirror origins')
   .action(async () => {
@@ -151,18 +153,18 @@ cli.command('del', 'delete a custom origin').action(() => {
   if (keys.length === whiteList.length) {
     return console.log(chalk.red('current has no custom origin to be deleted'))
   }
-  const delOrigins = keys.filter(key => !whiteList.includes(key))
+  const customOrigins = keys.filter(key => !whiteList.includes(key))
   inquirer.prompt({
     type: 'list',
     name: 'name',
     message: 'Please select the origin to be deleted:',
-    choices: delOrigins,
-  }).then(async res=> {
+    choices: customOrigins,
+  }).then(async res => {
     const name = res.name.trim()
     const currentOrigin = await getCurrentMirrorOrigin()
     const selectedOrigin = registries[name].registry
     if (currentOrigin === selectedOrigin) {
-      console.log(chalk.red('current origin is using, should not be deleted'))
+      console.log(chalk.red('current origin is using, please select other origin'))
     } else {
       delete registries[name]
       try {
@@ -176,7 +178,46 @@ cli.command('del', 'delete a custom origin').action(() => {
 })
 
 cli.command('rename', 'rename a custom origin').action(() => {
-  // ...
+  const keys = Object.keys(registries)
+  if (keys.length === whiteList.length) {
+    return console.log(chalk.red('current has no custom origin to be renamed'))
+  }
+  const customOrigins = keys.filter(key => !whiteList.includes(key))
+  inquirer.prompt([
+    {
+      type: 'list',
+      name: 'name',
+      message: 'Please select the origin name',
+      choices: customOrigins,
+    },
+    {
+      type: 'input',
+      name: 'newName',
+      message: 'Please input the new origin name',
+      validate(value) {
+        if (!value.trim()) {
+          return 'the new origin name cannot be empty'
+        }
+        if (keys.includes(value)) {
+          return 'the origin name already exists, please input another one'
+        }
+        return true
+      },
+    }
+  ]).then(res => {
+    const name = res.name.trim()
+    const newName = res.newName.trim()
+
+    registries[newName] = registries[name]
+    delete registries[name]
+
+    try {
+      fs.writeFileSync(path.join(__dirname, '../registries.json'), JSON.stringify(registries, null, 2))
+      console.log(chalk.green('rename successfully'))
+    } catch (err) {
+      console.log(chalk.red(err))
+    }
+  })
 })
 
 cli.help()
