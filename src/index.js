@@ -1,5 +1,4 @@
 const { exec, execSync } = require('child_process')
-const prompts = require('prompts')
 const inquirer = require('inquirer');
 const cac = require('cac')
 const chalk = require('chalk')

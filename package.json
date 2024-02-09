@@ -17,8 +17,7 @@
     "chalk": "^4.1.2",
     "execa": "^8.0.1",
     "inquirer": "^8.2.6",
-    "node-http-ping": "^0.3.1",
-    "prompts": "^2.4.2"
+    "node-http-ping": "^0.3.1"
   },
   "devDependencies": {
     "eslint": "^8.56.0",
