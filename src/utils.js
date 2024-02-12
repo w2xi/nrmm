@@ -1,5 +1,6 @@
+const fs = require('fs')
+const path = require('path')
 const { exec, execSync } = require('child_process')
-const chalk = require('chalk')
 
 async function getCurrentMirrorOrigin() {
   const result = await execSync('npm config get registry', { encoding: 'utf-8' })
@@ -14,15 +15,28 @@ function setMirrorOrigin(value) {
       return
     }
     if (stderr) {
-      console.log(chalk.red(stderr))
+      console.error(stderr)
       return
     }
-    // success
-    console.log(chalk.green('Set registry origin successfully!'))
+    console.success('Set registry successfully!')
   })
+}
+
+function writeSync(registries, action) {
+  try {
+    fs.writeFileSync(path.join(__dirname, '../registries.json'), JSON.stringify(registries, null, 2))
+    console.success(`${capitalize(action)} successfully!`)
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1)
 }
 
 module.exports = {
   getCurrentMirrorOrigin,
   setMirrorOrigin,
+  writeSync,
 }

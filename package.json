@@ -1,10 +1,10 @@
 {
-  "name": "nrs",
+  "name": "nrmm",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "bin": {
-    "nrs": "src/index.js"
+    "nrmm": "src/index.js"
   },
   "scripts": {
     "release": "release-it",
