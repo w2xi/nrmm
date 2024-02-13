@@ -2,13 +2,14 @@ const fs = require('fs')
 const path = require('path')
 const { exec, execSync } = require('child_process')
 
-async function getCurrentMirrorOrigin() {
+// execute command: npm config get registry
+async function getRegistry() {
   const result = await execSync('npm config get registry', { encoding: 'utf-8' })
   return result.trim()
 }
 
 // execute command: npm config set registry
-function setMirrorOrigin(value) {
+function setRegistry(value) {
   exec(`npm config set registry ${value}`, (error, stdout, stderr) => {
     if (error) {
       console.error(`exec error: ${error}`)
@@ -36,7 +37,7 @@ function capitalize(str) {
 }
 
 module.exports = {
-  getCurrentMirrorOrigin,
-  setMirrorOrigin,
+  getRegistry,
+  setRegistry,
   writeSync,
 }

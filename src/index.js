@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const cac = require('cac')
 const inquirer = require('inquirer')
 const chalk = require('chalk')
@@ -5,18 +7,18 @@ const pkg = require('../package.json')
 const registries = require('../registries.json')
 const ping = require('node-http-ping')
 const {
-  getCurrentMirrorOrigin,
-  setMirrorOrigin,
+  getRegistry,
+  setRegistry,
   writeSync
 } = require('./utils')
 const initLog = require('./log')
+
+initLog()
 
 // built-in origin
 const whiteList = ['npm', 'yarn', 'tencent', 'cnpm', 'taobao', 'npmMirror']
 
 const cli = cac()
-
-initLog()
 
 cli.version(pkg.version)
 
@@ -25,24 +27,24 @@ cli
   .action(async () => {
     let outputString = ''
     const registryKeys = Object.keys(registries)
-    const currentOrigin = await getCurrentMirrorOrigin()
+    const registry = await getRegistry()
 
     let maxLength = Math.max(...registryKeys.map((key) => key.length))
 
     registryKeys.forEach((key, index) => {
-      const registryOrigin = registries[key].registry
+      const url = registries[key].registry
       const placeholderString = `${' '.repeat(maxLength - key.length)}${'-'.repeat(10)}`
-      const line = `${key} ${placeholderString} ${registryOrigin}`
-      if (currentOrigin === registryOrigin) {
-        outputString += chalk.bold.green('*', line)
+      const suffix = ` ${placeholderString} ${url}`
+      if (registry === url) {
+        outputString += chalk.bold.green('*', key) + suffix
       } else {
-        outputString += '  ' + line
+        outputString += '  ' + key + suffix
       }
       if (index !== registryKeys.length - 1) {
         outputString += '\n'
       }
     })
-    console.log(chalk(outputString))
+    console.log(outputString)
   })
 
 cli
@@ -51,7 +53,7 @@ cli
     if (registry) {
       const url = registries[registry].registry
       if (url) {
-        setMirrorOrigin(url)
+        setRegistry(url)
       } else {
         console.warn('registry not found')
       }
@@ -62,7 +64,7 @@ cli
         message: 'Select a registry',
         choices: Object.keys(registries)
       }).then(res => {
-        setMirrorOrigin(registries[res.value].registry)
+        setRegistry(registries[res.value].registry)
       })
     }
   })
@@ -70,7 +72,7 @@ cli
 cli
   .command('current', 'show current registry url')
   .action(async () => {
-    const registrySource = await getCurrentMirrorOrigin()
+    const registrySource = await getRegistry()
     console.info(registrySource)
   })
 
@@ -156,7 +158,7 @@ cli.command('del', 'delete a custom registry').action(() => {
     choices: customOrigins,
   }).then(async res => {
     const name = res.name.trim()
-    const currentOrigin = await getCurrentMirrorOrigin()
+    const currentOrigin = await getRegistry()
     const selectedOrigin = registries[name].registry
     if (currentOrigin === selectedOrigin) {
       console.warn('current registry is using, please select other')

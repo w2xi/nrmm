@@ -9,7 +9,7 @@ const error = console.error
 // rewrite console's static method
 function initLog() {
   console.success = (...args) => {
-    log(chalk.hex('#67C23A')(...args))
+    log(chalk.green(...args))
   }
   console.info = (...args) => {
     info(chalk.bold.blue(...args))
